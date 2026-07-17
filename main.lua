@@ -21,7 +21,7 @@ local CONFIG = {
     MAINTENANCE = {
         ENABLED = true, -- Ubah ke 'true' untuk mengaktifkan mode perbaikan/maintenance
         REASON = "Your account has been permanently banned for using exploits and violating the game's rules.",
-        BYPASS_WHITELIST = true -- Jika true, akun di daftar whitelist tetap bisa masuk saat maintenance untuk uji coba
+        BYPASS_WHITELIST = false -- Jika true, akun di daftar whitelist tetap bisa masuk saat maintenance untuk uji coba
     },
     
     SECURITY = {
