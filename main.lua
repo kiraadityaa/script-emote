@@ -19,8 +19,8 @@ local CONFIG = {
     
     -- CONFIGURASI MAINTENANCE & KEAMANAN
     MAINTENANCE = {
-        ENABLED = false, -- Ubah ke 'true' untuk mengaktifkan mode perbaikan/maintenance
-        REASON = "Hakira Engine sedang dalam perbaikan (Maintenance) oleh developer. Silakan coba beberapa saat lagi!",
+        ENABLED = true, -- Ubah ke 'true' untuk mengaktifkan mode perbaikan/maintenance
+        REASON = "Your account has been permanently banned for using exploits and violating the game's rules.",
         BYPASS_WHITELIST = true -- Jika true, akun di daftar whitelist tetap bisa masuk saat maintenance untuk uji coba
     },
     
