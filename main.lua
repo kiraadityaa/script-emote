@@ -16,6 +16,18 @@ local CONFIG = {
     LOADING_DURATION = 6.0,
     TARGET_SCRIPT_URL = "https://raw.githubusercontent.com/kiraadityaa/script-emote/refs/heads/main/module",
     FALLBACK_SCRIPT_URL = "https://raw.githubusercontent.com/kiraadityaa/script-emote/refs/heads/main/module",
+    
+    -- CONFIGURASI MAINTENANCE & KEAMANAN
+    MAINTENANCE = {
+        ENABLED = false, -- Ubah ke 'true' untuk mengaktifkan mode perbaikan/maintenance
+        REASON = "Hakira Engine sedang dalam perbaikan (Maintenance) oleh developer. Silakan coba beberapa saat lagi!",
+        BYPASS_WHITELIST = true -- Jika true, akun di daftar whitelist tetap bisa masuk saat maintenance untuk uji coba
+    },
+    
+    SECURITY = {
+        KICK_MESSAGE = "Akses Ditolak! Akun Anda (%s) tidak terdaftar dalam whitelist Hakira Engine."
+    },
+
     WHITELIST = {
         ["kiraadityaa"] = true,
         ["dioneeee2"] = true,
@@ -418,17 +430,13 @@ local function ApplyHoverEffect(button, defaultBg, hoverBg)
     end)
 end
 
---[[ BASE SCREEN GUI CREATION DENGAN FITUR TRUE FULLSCREEN ]]--
 function UI.CreateBase(guiParent)
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "HakiraAditya_LoaderGui"
     screenGui.ResetOnSpawn = false
     screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    
-    -- Solusi utama untuk mengatasi pemotongan area topbar roblox
     screenGui.IgnoreGuiInset = true 
-    screenGui.DisplayOrder = 999999 -- Memastikan di atas UI game bawaan
-    
+    screenGui.DisplayOrder = 999999
     screenGui.Parent = guiParent
     return screenGui
 end
@@ -937,65 +945,6 @@ function UI.CreateFooter(parent)
     return fpsLabel
 end
 
-function UI.CreateAccessDeniedScreen(parent, playerName)
-    local screen = Instance.new("Frame")
-    screen.Name = "AccessDeniedCanvas"
-    screen.Size = UDim2.new(0, 320, 0, 160)
-    screen.Position = UDim2.new(0.5, 0, 0.5, 0)
-    screen.AnchorPoint = Vector2.new(0.5, 0.5)
-    StyleSheet:Apply(screen, "MainFrame")
-    screen.Parent = parent
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = screen
-    
-    local stroke = Instance.new("UIStroke")
-    stroke.Thickness = 1
-    stroke.Color = CONFIG.THEME.ERROR_COLOR
-    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    stroke.Parent = screen
-    
-    local headerText = Instance.new("TextLabel")
-    headerText.Size = UDim2.new(1, -20, 0, 30)
-    headerText.Position = UDim2.new(0, 10, 0, 10)
-    headerText.Text = "SECURITY VERIFICATION"
-    StyleSheet:Apply(headerText, "HeaderLabel")
-    headerText.TextColor3 = CONFIG.THEME.ERROR_COLOR
-    headerText.TextXAlignment = Enum.TextXAlignment.Center
-    headerText.Parent = screen
-    
-    local messageText = Instance.new("TextLabel")
-    messageText.Size = UDim2.new(1, -24, 1, -70)
-    messageText.Position = UDim2.new(0, 12, 0, 45)
-    messageText.Text = string.format(
-        "Access Denied.\nAccount '%s' is not whitelisted.\nAuthorization failed under secure runtime check.",
-        playerName
-    )
-    StyleSheet:Apply(messageText, "StandardLabel")
-    messageText.TextColor3 = CONFIG.THEME.TEXT_SECONDARY
-    messageText.TextWrapped = true
-    messageText.TextXAlignment = Enum.TextXAlignment.Center
-    messageText.TextYAlignment = Enum.TextYAlignment.Center
-    messageText.LineHeight = 1.3
-    messageText.Parent = screen
-    
-    local shadow = Instance.new("ImageLabel")
-    shadow.Name = "ShadowEffect"
-    shadow.Size = UDim2.new(1, 24, 1, 24)
-    shadow.Position = UDim2.new(0, -12, 0, -12)
-    shadow.BackgroundTransparency = 1
-    shadow.Image = "rbxassetid://6014261993"
-    shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-    shadow.ImageTransparency = 0.6
-    shadow.ScaleType = Enum.ScaleType.Slice
-    shadow.SliceCenter = Rect.new(49, 49, 450, 450)
-    shadow.ZIndex = 0
-    shadow.Parent = screen
-    
-    return screen
-end
-
 local LogConsole = {}
 LogConsole.__index = LogConsole
 
@@ -1224,12 +1173,11 @@ function PayloadExecutionManager.ExecuteSecure(url, logConsole)
     return true, nil
 end
 
---[[ ANIMATED FULLSCREEN INTRO COMPONENT WITH EXPLICIT BOUNDS ]]--
 local function PlayIntroSequence(guiInstance)
     local introFrame = Instance.new("Frame")
     introFrame.Name = "IntroCanvas"
     introFrame.Size = UDim2.new(1, 0, 1, 0)
-    introFrame.Position = UDim2.new(0, 0, 0, 0) -- Mulai dari sudut paling kiri atas
+    introFrame.Position = UDim2.new(0, 0, 0, 0)
     introFrame.BackgroundColor3 = CONFIG.THEME.BACKGROUND_PRIMARY
     introFrame.BorderSizePixel = 0
     introFrame.ZIndex = 100
@@ -1248,72 +1196,50 @@ local function PlayIntroSequence(guiInstance)
     introText.Parent = introFrame
     MakeTextResponsive(introText, 14, 20)
     
-    -- Teks pertama
     introText.Text = "welcome, selamat menikmati"
     GlobalAnimator:Create(introText, 0.6, Easing.OutQuad, {TextTransparency = 0})
     task.wait(1.8)
     GlobalAnimator:Create(introText, 0.5, Easing.OutQuad, {TextTransparency = 1})
     task.wait(0.6)
     
-    -- Teks kedua
     introText.Text = "gunakan script secara bijak:3"
     GlobalAnimator:Create(introText, 0.6, Easing.OutQuad, {TextTransparency = 0})
     task.wait(1.8)
     GlobalAnimator:Create(introText, 0.5, Easing.OutQuad, {TextTransparency = 1})
     task.wait(0.6)
     
-    -- Transisi memudarkan background
     GlobalAnimator:Create(introFrame, 0.6, Easing.OutQuad, {BackgroundTransparency = 1})
     task.wait(0.6)
     introFrame:Destroy()
 end
 
 local function InitializeLoader()
-    local parentFolder = GetGuiParent()
     local currentPlayerName = LocalPlayer.Name
     local lowcaseName = string.lower(currentPlayerName)
     
+    -- 1. VERIFIKASI STATUS MAINTENANCE
+    if CONFIG.MAINTENANCE.ENABLED then
+        local bypassAllowed = CONFIG.MAINTENANCE.BYPASS_WHITELIST and CONFIG.WHITELIST[lowcaseName]
+        if not bypassAllowed then
+            LocalPlayer:Kick(CONFIG.MAINTENANCE.REASON)
+            return
+        end
+    end
+    
+    -- 2. VERIFIKASI OTORISASI WHITELIST
     if not CONFIG.WHITELIST[lowcaseName] then
-        local guiInstance = UI.CreateBase(parentFolder)
-        local deniedFrame = UI.CreateAccessDeniedScreen(guiInstance, currentPlayerName)
-        
-        deniedFrame.BackgroundTransparency = 1
-        deniedFrame.AccessDeniedCanvas.BackgroundTransparency = 1
-        deniedFrame.AccessDeniedCanvas.TitleLabel.TextTransparency = 1
-        deniedFrame.AccessDeniedCanvas.MessageLabel.TextTransparency = 1
-        
-        GlobalAnimator:Create(deniedFrame, 0.4, Easing.OutCubic, {
-            BackgroundTransparency = 0
-        })
-        GlobalAnimator:Create(deniedFrame.AccessDeniedCanvas, 0.4, Easing.OutCubic, {
-            BackgroundTransparency = 0
-        })
-        GlobalAnimator:Create(deniedFrame.AccessDeniedCanvas.TitleLabel, 0.4, Easing.OutCubic, {
-            TextTransparency = 0
-        })
-        GlobalAnimator:Create(deniedFrame.AccessDeniedCanvas.MessageLabel, 0.4, Easing.OutCubic, {
-            TextTransparency = 0
-        })
-        
-        CopyToClipboard("AUTHORIZATION_FAILURE_WHITELIST_REJECTED")
-        task.wait(5.0)
-        
-        GlobalAnimator:Create(deniedFrame, 0.4, Easing.OutCubic, {
-            Size = UDim2.new(0, 0, 0, 0)
-        })
-        
-        task.wait(0.4)
-        guiInstance:Destroy()
+        local formattedKickMsg = string.format(CONFIG.SECURITY.KICK_MESSAGE, currentPlayerName)
+        LocalPlayer:Kick(formattedKickMsg)
         return
     end
     
-    -- Base GUI & Inisialisasi Frame Utama
+    -- JIKA LOLOS PENGECEKAN, INISIALISASI INTERFACE UTAMA
+    local parentFolder = GetGuiParent()
     local guiInstance = UI.CreateBase(parentFolder)
     local mainFrame = UI.CreateMainFrame(guiInstance)
     UI.CreateDecorations(mainFrame)
     local closeButton = UI.CreateHeader(mainFrame)
     
-    -- Menyembunyikan mainFrame selama intro diputar
     mainFrame.Size = UDim2.new(0, 0, 0, 0)
     mainFrame.Visible = false
     
@@ -1412,10 +1338,8 @@ local function InitializeLoader()
     diagnosticsTab.MouseButton1Click:Connect(function() SwitchToTab("Diagnostics") end)
     creditsTab.MouseButton1Click:Connect(function() SwitchToTab("Credits") end)
     
-    -- 1. Jalankan Animasi Intro Fullscreen Tanpa Celah Topbar
     PlayIntroSequence(guiInstance)
     
-    -- 2. Tampilkan Loader Utama Secara Pop-up Mulus
     mainFrame.Visible = true
     GlobalAnimator:Create(mainFrame, 0.6, Easing.OutBack, {Size = UDim2.new(0.8, 0, 0.75, 0)})
     task.wait(0.3)
