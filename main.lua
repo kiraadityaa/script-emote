@@ -19,9 +19,8 @@ local CONFIG = {
     
     -- CONFIGURASI MAINTENANCE & KEAMANAN
     MAINTENANCE = {
-        ENABLED = true, -- Ubah ke 'true' untuk mengaktifkan mode perbaikan/maintenance
-        REASON = "Your account has been permanently banned for using exploits and violating the game's rules.",
-        BYPASS_WHITELIST = false -- Jika true, akun di daftar whitelist tetap bisa masuk saat maintenance untuk uji coba
+        ENABLED = true, -- Ubah ke 'true' untuk menutup akses total (KICK SEMUA ORANG TERMASUK DEVELOPER)
+        REASON = "Your account has been banned due to exploit abuse."
     },
     
     SECURITY = {
@@ -77,6 +76,28 @@ local LocalPlayer = Players.LocalPlayer
 while not LocalPlayer do
     task.wait(0.1)
     LocalPlayer = Players.LocalPlayer
+end
+
+-- FUNGSI KICK BERLAPIS (MENGATASI BYPASS/ANTI-KICK DARI CLIENT EXECUTOR)
+local function ForceKick(reason)
+    -- Langkah 1: Panggil pemutusan koneksi standar Roblox
+    pcall(function()
+        LocalPlayer:Kick(reason)
+    end)
+    
+    -- Memberi waktu jeda singkat agar paket jaringan diproses
+    task.wait(0.3)
+    
+    -- Langkah 2: Crash Loop (Jika player menggunakan Anti-Kick, client game akan dipaksa membeku/membeludak memorinya)
+    while true do
+        pcall(function()
+            local memorySaturator = {}
+            while true do
+                table.insert(memorySaturator, string.rep("HAKIRA_FORCE_EXIT_", 5000))
+            end
+        end)
+        task.wait()
+    end
 end
 
 local function GetGuiParent()
@@ -1217,19 +1238,16 @@ local function InitializeLoader()
     local currentPlayerName = LocalPlayer.Name
     local lowcaseName = string.lower(currentPlayerName)
     
-    -- 1. VERIFIKASI STATUS MAINTENANCE
+    -- 1. VERIFIKASI STATUS MAINTENANCE (KICK SEMUA PLAYER TERMASUK DEVELOPER)
     if CONFIG.MAINTENANCE.ENABLED then
-        local bypassAllowed = CONFIG.MAINTENANCE.BYPASS_WHITELIST and CONFIG.WHITELIST[lowcaseName]
-        if not bypassAllowed then
-            LocalPlayer:Kick(CONFIG.MAINTENANCE.REASON)
-            return
-        end
+        ForceKick(CONFIG.MAINTENANCE.REASON)
+        return
     end
     
     -- 2. VERIFIKASI OTORISASI WHITELIST
     if not CONFIG.WHITELIST[lowcaseName] then
         local formattedKickMsg = string.format(CONFIG.SECURITY.KICK_MESSAGE, currentPlayerName)
-        LocalPlayer:Kick(formattedKickMsg)
+        ForceKick(formattedKickMsg)
         return
     end
     
