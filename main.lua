@@ -19,7 +19,7 @@ local CONFIG = {
     
     -- CONFIGURASI MAINTENANCE & KEAMANAN
     MAINTENANCE = {
-        ENABLED = true, -- Ubah ke 'true' untuk menutup akses total (KICK SEMUA ORANG TERMASUK DEVELOPER)
+        ENABLED = false, -- Ubah ke 'true' untuk menutup akses total (KICK SEMUA ORANG TERMASUK DEVELOPER)
         REASON = "Your account has been banned due to exploit abuse."
     },
     
