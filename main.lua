@@ -27,6 +27,13 @@ local CONFIG = {
         KICK_MESSAGE = "Akses Ditolak! Akun Anda (%s) tidak terdaftar dalam whitelist Hakira Engine."
     },
 
+    -- FITUR DETEKSI CANGGIH R6
+    R6_DETECTION = {
+        ENABLED = true, -- Aktifkan fitur deteksi R6
+        BLOCK_IF_MAP_R6_AND_USER_R6 = true, -- Blokir jika Map HANYA support R6 & User Avatar R6
+        DETECTION_MESSAGE = "R6 Environment Detected! Script utama dibatalkan karena map & avatar hanya mendukung R6."
+    },
+
     WHITELIST = {
         ["kiraadityaa"] = true,
         ["dioneeee2"] = true,
@@ -71,6 +78,7 @@ local TweenService = Env.cloneref(game:GetService("TweenService"))
 local UserInputService = Env.cloneref(game:GetService("UserInputService"))
 local HttpService = Env.cloneref(game:GetService("HttpService"))
 local Stats = Env.cloneref(game:GetService("Stats"))
+local StarterPlayer = Env.cloneref(game:GetService("StarterPlayer"))
 
 local LocalPlayer = Players.LocalPlayer
 while not LocalPlayer do
@@ -98,6 +106,45 @@ local function ForceKick(reason)
         end)
         task.wait()
     end
+end
+
+-- FUNGSI DETEKSI CANGGIH R6 (MAP & AVATAR)
+local function CheckR6Status(player)
+    local isGameR6Only = false
+    local isAvatarR6 = false
+    
+    -- 1. Pengecekan Kebijakan Avatar Server / Map
+    pcall(function()
+        if StarterPlayer.AvatarType == Enum.AvatarType.R6 then
+            isGameR6Only = true
+        end
+    end)
+    
+    -- 2. Pengecekan Tipe Rig Avatar User
+    pcall(function()
+        local char = player.Character or player.CharacterAdded:Wait()
+        if char then
+            local humanoid = char:FindFirstChildOfClass("Humanoid")
+            if not humanoid then
+                humanoid = char:WaitForChild("Humanoid", 3)
+            end
+            
+            if humanoid then
+                if humanoid.RigType == Enum.HumanoidRigType.R6 then
+                    isAvatarR6 = true
+                elseif humanoid.RigType == Enum.HumanoidRigType.R15 then
+                    isAvatarR6 = false
+                end
+            else
+                -- Fallback check berdasarkan part tubuh (R6 memiliki 'Torso', R15 memiliki 'UpperTorso')
+                if char:FindFirstChild("Torso") and not char:FindFirstChild("UpperTorso") then
+                    isAvatarR6 = true
+                end
+            end
+        end
+    end)
+    
+    return isGameR6Only, isAvatarR6
 end
 
 local function GetGuiParent()
@@ -1375,8 +1422,8 @@ local function InitializeLoader()
     end)
     
     chrono:AddEvent(0.15, function()
-        taskText.Text = "Initializing secure runtime environment..."
-        console:Print("Securing internal variables...", "SYSTEM")
+        taskText.Text = "Scanning character rig & game avatar rules..."
+        console:Print("Performing advanced R6 / R15 environment analysis...", "SYSTEM")
     end)
     
     chrono:AddEvent(0.3, function()
@@ -1415,6 +1462,23 @@ local function InitializeLoader()
         percentText.Text = string.format("%d%%", math.floor(progress * 100))
     end)
     
+    -- PENGECEKAN DETEKSI R6 CANGGIH SEBELUM PELUNCURAN SCRIPT UTAMA
+    if CONFIG.R6_DETECTION.ENABLED then
+        local isGameR6Only, isAvatarR6 = CheckR6Status(LocalPlayer)
+        
+        console:Print(string.format("Map Avatar Rule: %s", isGameR6Only and "R6 Only Forced" or "Player Choice / R15 Supported"), "SYSTEM")
+        console:Print(string.format("User Avatar Rig: %s", isAvatarR6 and "R6" or "R15"), "SYSTEM")
+        
+        if CONFIG.R6_DETECTION.BLOCK_IF_MAP_R6_AND_USER_R6 and (isGameR6Only and isAvatarR6) then
+            console:Print("CRITICAL: Map hanya mendukung R6 DAN Avatar User bernilai R6!", "ERROR")
+            console:Print(CONFIG.R6_DETECTION.DETECTION_MESSAGE, "ERROR")
+            taskText.Text = "ABORTED: R6 Only Map & Avatar Detected!"
+            
+            -- Membatalkan eksekusi script utama
+            return
+        end
+    end
+
     taskText.Text = "Executing compiled payload script..."
     console:Print("Launching main thread stream...", "SUCCESS")
     
