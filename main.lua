@@ -8,6 +8,7 @@
     Target Payload  : https://raw.githubusercontent.com/hakiraadityaa/emote-menu-script/refs/heads/main/emote%20
     
     COMPATIBILITY: Lua 5.1 / Luau (Delta Executor, Wave, Hydrogen, etc.)
+    FEATURE        : Auto-Detection Game Restriction (Anti-R6 Rig Executor Crash Shield)
 --]]
 
 local CONFIG = {
@@ -27,13 +28,6 @@ local CONFIG = {
         KICK_MESSAGE = "Akses Ditolak! Akun Anda (%s) tidak terdaftar dalam whitelist Hakira Engine."
     },
 
-    -- FITUR DETEKSI CANGGIH R6
-    R6_DETECTION = {
-        ENABLED = true, -- Aktifkan fitur deteksi R6
-        BLOCK_IF_MAP_R6_AND_USER_R6 = true, -- Blokir jika Map HANYA support R6 & User Avatar R6
-        DETECTION_MESSAGE = "R6 Environment Detected! Script utama dibatalkan karena map & avatar hanya mendukung R6."
-    },
-
     WHITELIST = {
         ["kiraadityaa"] = true,
         ["dioneeee2"] = true,
@@ -51,7 +45,7 @@ local CONFIG = {
         TEXT_MUTED           = Color3.fromRGB(90, 90, 90),
         ACCENT_WHITE         = Color3.fromRGB(245, 245, 245),
         ACCENT_DARK          = Color3.fromRGB(40, 40, 40),
-        ERROR_COLOR          = Color3.fromRGB(200, 70, 70),
+        ERROR_COLOR          = Color3.fromRGB(220, 80, 80),
         SUCCESS_COLOR        = Color3.fromRGB(120, 220, 120)
     },
     PARTICLE_SETTINGS = {
@@ -78,7 +72,6 @@ local TweenService = Env.cloneref(game:GetService("TweenService"))
 local UserInputService = Env.cloneref(game:GetService("UserInputService"))
 local HttpService = Env.cloneref(game:GetService("HttpService"))
 local Stats = Env.cloneref(game:GetService("Stats"))
-local StarterPlayer = Env.cloneref(game:GetService("StarterPlayer"))
 
 local LocalPlayer = Players.LocalPlayer
 while not LocalPlayer do
@@ -106,45 +99,6 @@ local function ForceKick(reason)
         end)
         task.wait()
     end
-end
-
--- FUNGSI DETEKSI CANGGIH R6 (MAP & AVATAR)
-local function CheckR6Status(player)
-    local isGameR6Only = false
-    local isAvatarR6 = false
-    
-    -- 1. Pengecekan Kebijakan Avatar Server / Map
-    pcall(function()
-        if StarterPlayer.AvatarType == Enum.AvatarType.R6 then
-            isGameR6Only = true
-        end
-    end)
-    
-    -- 2. Pengecekan Tipe Rig Avatar User
-    pcall(function()
-        local char = player.Character or player.CharacterAdded:Wait()
-        if char then
-            local humanoid = char:FindFirstChildOfClass("Humanoid")
-            if not humanoid then
-                humanoid = char:WaitForChild("Humanoid", 3)
-            end
-            
-            if humanoid then
-                if humanoid.RigType == Enum.HumanoidRigType.R6 then
-                    isAvatarR6 = true
-                elseif humanoid.RigType == Enum.HumanoidRigType.R15 then
-                    isAvatarR6 = false
-                end
-            else
-                -- Fallback check berdasarkan part tubuh (R6 memiliki 'Torso', R15 memiliki 'UpperTorso')
-                if char:FindFirstChild("Torso") and not char:FindFirstChild("UpperTorso") then
-                    isAvatarR6 = true
-                end
-            end
-        end
-    end)
-    
-    return isGameR6Only, isAvatarR6
 end
 
 local function GetGuiParent()
@@ -497,6 +451,89 @@ local function ApplyHoverEffect(button, defaultBg, hoverBg)
         GlobalAnimator:Create(button, 0.15, Easing.OutQuad, {BackgroundColor3 = defaultBg})
     end)
 end
+
+-- ================== [ NEW NOTIF COMPONENT ADDED ] =====================
+function UI.ShowBottomLeftNotification(message, duration)
+    local parentGui = GetGuiParent()
+    if not parentGui then return end
+    
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "HakiraAditya_NotifSystem"
+    screenGui.ResetOnSpawn = false
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    screenGui.IgnoreGuiInset = true 
+    screenGui.DisplayOrder = 999999
+    screenGui.Parent = parentGui
+    
+    local notifFrame = Instance.new("Frame")
+    notifFrame.Size = UDim2.new(0, 310, 0, 95)
+    notifFrame.Position = UDim2.new(0, -350, 1, -20)
+    notifFrame.AnchorPoint = Vector2.new(0, 1)
+    StyleSheet:Apply(notifFrame, "MainFrame")
+    notifFrame.Parent = screenGui
+    
+    local shadow = Instance.new("ImageLabel")
+    shadow.Size = UDim2.new(1, 24, 1, 24)
+    shadow.Position = UDim2.new(0, -12, 0, -12)
+    shadow.BackgroundTransparency = 1
+    shadow.Image = "rbxassetid://6014261993"
+    shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+    shadow.ImageTransparency = 0.5
+    shadow.ScaleType = Enum.ScaleType.Slice
+    shadow.SliceCenter = Rect.new(49, 49, 450, 450)
+    shadow.ZIndex = -1
+    shadow.Parent = notifFrame
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = CONFIG.THEME.ERROR_COLOR
+    stroke.Thickness = 1
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Parent = notifFrame
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = notifFrame
+    
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1, -20, 0, 20)
+    titleLabel.Position = UDim2.new(0, 10, 0, 8)
+    titleLabel.Text = "HAKIRA COMPATIBILITY WARNING"
+    titleLabel.BackgroundTransparency = 1
+    StyleSheet:Apply(titleLabel, "HeaderLabel")
+    titleLabel.TextColor3 = CONFIG.THEME.ERROR_COLOR
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.TextSize = 12
+    titleLabel.Parent = notifFrame
+    
+    local line = Instance.new("Frame")
+    line.Size = UDim2.new(1, 0, 0, 1)
+    line.Position = UDim2.new(0, 0, 0, 33)
+    line.BackgroundColor3 = CONFIG.THEME.BORDER_COLOR
+    line.BorderSizePixel = 0
+    line.Parent = notifFrame
+    
+    local msgLabel = Instance.new("TextLabel")
+    msgLabel.Size = UDim2.new(1, -20, 1, -45)
+    msgLabel.Position = UDim2.new(0, 10, 0, 40)
+    msgLabel.Text = message
+    msgLabel.BackgroundTransparency = 1
+    StyleSheet:Apply(msgLabel, "StandardLabel")
+    msgLabel.TextXAlignment = Enum.TextXAlignment.Left
+    msgLabel.TextYAlignment = Enum.TextYAlignment.Top
+    msgLabel.TextWrapped = true
+    msgLabel.TextSize = 13
+    msgLabel.Parent = notifFrame
+
+    GlobalAnimator:Create(notifFrame, 0.6, Easing.OutBounce, { Position = UDim2.new(0, 20, 1, -20) })
+    
+    task.spawn(function()
+        task.wait(duration or 7)
+        GlobalAnimator:Create(notifFrame, 0.4, Easing.InOutQuad, { Position = UDim2.new(0, -350, 1, -20) })
+        task.wait(0.4)
+        screenGui:Destroy()
+    end)
+end
+-- ====================================================================
 
 function UI.CreateBase(guiParent)
     local screenGui = Instance.new("ScreenGui")
@@ -1422,8 +1459,8 @@ local function InitializeLoader()
     end)
     
     chrono:AddEvent(0.15, function()
-        taskText.Text = "Scanning character rig & game avatar rules..."
-        console:Print("Performing advanced R6 / R15 environment analysis...", "SYSTEM")
+        taskText.Text = "Initializing secure runtime environment..."
+        console:Print("Securing internal variables...", "SYSTEM")
     end)
     
     chrono:AddEvent(0.3, function()
@@ -1462,22 +1499,37 @@ local function InitializeLoader()
         percentText.Text = string.format("%d%%", math.floor(progress * 100))
     end)
     
-    -- PENGECEKAN DETEKSI R6 CANGGIH SEBELUM PELUNCURAN SCRIPT UTAMA
-    if CONFIG.R6_DETECTION.ENABLED then
-        local isGameR6Only, isAvatarR6 = CheckR6Status(LocalPlayer)
-        
-        console:Print(string.format("Map Avatar Rule: %s", isGameR6Only and "R6 Only Forced" or "Player Choice / R15 Supported"), "SYSTEM")
-        console:Print(string.format("User Avatar Rig: %s", isAvatarR6 and "R6" or "R15"), "SYSTEM")
-        
-        if CONFIG.R6_DETECTION.BLOCK_IF_MAP_R6_AND_USER_R6 and (isGameR6Only and isAvatarR6) then
-            console:Print("CRITICAL: Map hanya mendukung R6 DAN Avatar User bernilai R6!", "ERROR")
-            console:Print(CONFIG.R6_DETECTION.DETECTION_MESSAGE, "ERROR")
-            taskText.Text = "ABORTED: R6 Only Map & Avatar Detected!"
-            
-            -- Membatalkan eksekusi script utama
-            return
+    -- === NEW FITUR CEK MAP R6 === --
+    taskText.Text = "Running Protocol Restrictions Verify..."
+    console:Print("Validating Active Character Build Type...", "SYSTEM")
+    
+    local isR6MapFound = false
+    pcall(function()
+        local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local humanoid = character:WaitForChild("Humanoid", 2)
+        if humanoid and humanoid.RigType == Enum.HumanoidRigType.R6 then
+            isR6MapFound = true
         end
+    end)
+    
+    if isR6MapFound then
+        console:Print("GAME R6 FORCING DETECTED! Sequence Halted.", "ERROR")
+        taskText.Text = "System Halted: User Rig Type Conflicted (R6)."
+        
+        UI.ShowBottomLeftNotification(
+            "Game mendeteksi batasan bentuk avatar tubuh R6.\n" ..
+            "Fitur Emote Utama khusus diperuntukkan animasi persendian Rig R15!\n" ..
+            "Proses muat digagalkan otomatis untuk mencegah Crash Eksekutor.",
+            8.0 -- Notifikasi tayang di pojok 8 Detik
+        )
+        
+        task.wait(2.5) -- Berikan jendela jeda melihat status teks main canvas merah sesaat sebelum memudar
+        GlobalAnimator:Create(mainFrame, 0.4, Easing.OutCubic, {Size = UDim2.new(0, 0, 0, 0)})
+        task.wait(0.4)
+        SafeCleanup()
+        return -- Hindari Menjalankan payload url.
     end
+    -- ============================ --
 
     taskText.Text = "Executing compiled payload script..."
     console:Print("Launching main thread stream...", "SUCCESS")
